@@ -354,28 +354,6 @@ def extract_sections(content):
 def gen_prompt(file_name,target_api,code_context_):
     code_context = code_context_
     mutation_prompt = f"""
-    **角色**：你是一个精通JAX测试开发的高级工程师，需要为指定代码段生成符合工业级测试标准的用例。
-    **目标上下文**：
-    - 文件(参考JAX源码文件)：{file_name}
-    - 关键未覆盖行（部分）：{code_context}
-    - 目标API：{target_api}
-    
-    **生成要求**：
-    1. 必须执行到上述代码行，验证正常/异常路径
-    2. 输入需包含：
-        - 至少两种设备类型（CPU/GPU/TPU）和两种数值精度（float32/bfloat16）
-        - 边界值（如0, inf, NaN）
-    3. 必须包含两类异常测试：
-        a) 无效形状或类型（如不符合JAX的严格类型要求）
-        b) 非法JAXPR转换（如包含动态形状或非法控制流）
-    
-	**缩进规范**：
-	    必须使用4个空格缩进，禁止使用制表符
-	    多级嵌套保持严格缩进对齐
-    **生成约束**：
-    1. 禁止使用experimental模块（除非目标API明确要求）
-    2. 必须包含JIT兼容性检查（使用@jax.jit装饰器）
-    3. 梯度计算测试需符合JAX自动微分规范：
          ```python
         def loss_fn():
             return result.sum()
@@ -383,51 +361,7 @@ def gen_prompt(file_name,target_api,code_context_):
         grad_fn = jax.value_and_grad(loss_fn)
         _, grads = grad_fn()
         assert not jax.tree_util.tree_all(jax.tree_map(jnp.isnan, grads))
-        ```
-	
-    **代码模板**（严格遵循JAX规范）：
-    ### 函数逻辑模板 (fn_code)
-    ```python
-    # TEST CASE FOR: {file_name}
-    import jax
-    import jax.numpy as jnp
-    from jax import config, jit 
-    from jax import config
-    config.update("jax_enable_x64", True)
-    def get_fn():
-        # 固定随机种子
-        def fn({{input_vars}}):
-            """ '测试函数核心逻辑' """
-            # 输入初始化
-            {{input_initialization}}        
-            # 目标API调用
-            {{target_api_call}}	        
-            # 结果验证
-            {{validation_logic}}	        
-            # 设备迁移测试（可选）
-            {{device_migration_test}}	        
-            return {{result_vars}}
-        return jax.jit(fn)
-    fn = get_fn()
-    ```
-    ###输入初始化模板 (inv_code)
-    # 输入张量构造（至少两种类型），根据input_vars参数确定输入张量构造
-    ```python
-	# 基础输入构造（至少两种精度）
-	{input_var} = jax.random.normal(subkeys[0], {shape}, dtype={dtype})
-	special_{input_var} = jnp.array({edge_values}, dtype={alt_dtype})
-    ```
-    # 设备放置（显式指定）
-    ```python
-	{input_var} = jax.device_put({input_var}, jax.devices('cpu')[0])
-    ```
-    ###输入列表 (input_list),根据input_vars参数确定输入列表，input_list只能是参数名，不能涉及操作
-    ```python
-    input_list = [({{input_var}},),(special_{{input_var}},)]
-    ```
-    请满足上述要求生成代码(保证缩进格式正确，不含有无用空格),覆盖关键未覆盖行，最后只输出函数逻辑 (fn_code)、输入初始化 (inv_code)、输入列表 (input_list)三个部分生成的代码，无需解释说明
-    """
-
+        ```"""
     return mutation_prompt
     
 #生成代码
