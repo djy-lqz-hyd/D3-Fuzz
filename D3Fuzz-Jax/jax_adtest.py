@@ -22,27 +22,24 @@ import subprocess as sp
 jax.config.update("jax_enable_x64", True)
 JaxDatabase.database_config("127.0.0.1", 27017, "jax-test-unique")
 
-# 全局状态维护（可通过闭包实现，这里简化使用全局变量）
+
 processed_files = set()
-#动态衰减因子
-#decay_factors = {}
-#前一段覆盖率
 before_coverage = 0
 DECAY_FILE = "decay_factors.json"
 
-# 读取衰减因子文件
+
 def load_decay_factors():
     if os.path.exists(DECAY_FILE):
         with open(DECAY_FILE, "r") as f:
             return json.load(f)
-    return {}  # 如果文件不存在，返回空字典
+    return {}  
 
 #更新衰减因子文件    
 def update_decay_factor(decay_factors):
     with open(DECAY_FILE, "w") as f:
-        json.dump(decay_factors, f, indent=4)  # 格式化存储，方便查看
+        json.dump(decay_factors, f, indent=4)  
         
-#更新处理过的文件
+
 def update_processed_files(file_name,before_coverage):
     code_status = 0
     if os.path.exists('coverage_Python_report_stage.csv'):
@@ -51,15 +48,13 @@ def update_processed_files(file_name,before_coverage):
         processed_files.add(file_name)
 
 def compare_last_two_percentages(file_path):
-    # 读取CSV文件（无表头，制表符分隔）
+    
     df = pd.read_csv(file_path, sep='\t', header=None)
 
-    # 检查至少需要两行数据
     if len(df) < 2:
         print("错误：文件需要至少包含两行数据")
         return
 
-    # 获取最后两行
     last_two = df.tail(2).reset_index(drop=True)
     list_fron = last_two[0][0]
     list_back = last_two[0][1]
@@ -72,7 +67,7 @@ def compare_last_two_percentages(file_path):
     else:
         return 0
 
-# 递归查找函数
+
 def find_numbers(data, target):
     for item in data:
         if isinstance(item, tuple):
@@ -87,15 +82,13 @@ def find_numbers(data, target):
                     return result
     return []
 
-##解析覆盖率数据JAX
+
 def analyze_coverage():
     with open('coverage.json') as f:
         data = json.load(f)
-
-    # 计算各文件覆盖率
     coverage_stats = {}
     for file, info in data['files'].items():
-        if 'jax' not in file:  # 仅关注JAX源码
+        if 'jax' not in file: 
             continue
         total_lines = info['summary']['num_statements']
         covered_lines = info['summary']['covered_lines']
@@ -109,16 +102,14 @@ def analyze_coverage():
 
     return coverage_stats
 
-#识别低覆盖率区域定位
 def find_low_coverage_files(stats, threshold=70):
     return {
         f: data for f, data in stats.items()
         if data['pct'] < threshold
     }
 
-#提取关键未覆盖代码JAX
+
 def get_critical_lines(file_path, missing_lines):
-    """多维度关键代码行识别 - 针对JAX框架"""
     critical = []
     line_total = []
     line_fileName = []
@@ -178,9 +169,9 @@ def get_critical_lines(file_path, missing_lines):
     line_fileName.append((file_path, line_total))
     return critical, line_fileName, line_target
 
-#JAX代码
+
 def prioritize_files(low_coverage, top_k=5, shuffle_window=3):
-    """基于JAX测试套件特性的优先级权重分配"""
+   
     priority_rules = {
         # 主模块类别: (路径关键词, 基础权重, 子模块额外权重)
         'autodiff': (['autodiff', 'grad'], 4.0, {
@@ -251,36 +242,28 @@ def prioritize_files(low_coverage, top_k=5, shuffle_window=3):
                         sub_weight += sub_val
                 break
 
-        # 关键行权重加成
+
         critical_lines,line_fileName,line_target_ = get_critical_lines(file_path, data['missing'])
         critical_lines_all.append(critical_lines)
         line_fileNames.append((file_path,line_fileName))
         #critical.append((file_path,critical_lines))
-        critical_factor = 1 + 0.1 * len(critical_lines)  # 每关键行+10%权重
-        #拿到所有文件的动态衰减因子
-        decay_factors = load_decay_factors()
-        #应用动态衰减因子
+        #critical_factor = 1 + 0.1 * len(critical_lines) 
         decay = decay_factors.get(file_path, 1.0)
-        # 最终得分 = (100-覆盖率) * 权重 * 关键因子
         score = (100 - data['pct']) * (base_weight + sub_weight) * critical_factor * decay
         if(score > score_):
             score_ = score
             line_target = line_target_
             
-        prioritized.append((file_path, score))  
-         
+        prioritized.append((file_path, score))        
     sorted_prioritized = sorted(prioritized, key=lambda x: -x[1])
 
-    # 动态调整Top-K 随机扰动
-    top_candidates = sorted_prioritized[:top_k*2]  # 取双倍候选
+    top_candidates = sorted_prioritized[:top_k*2] 
     
-    # 随机扰动前N名
     if len(top_candidates) >= shuffle_window:
         shuffle_part = list(top_candidates[:shuffle_window])
         random.shuffle(shuffle_part)
         top_candidates = shuffle_part + top_candidates[shuffle_window:]
         
-    # 最终选择并更新衰减因子
     final_selection = []
     code_status = 0
     for file_info in top_candidates[:top_k]:
@@ -377,8 +360,7 @@ def gen(
 ):
     t_start = time.time()
     client = OpenAI(
-        # 若没有配置环境变量，请用百炼API Key将下行替换为：api_key="sk-xxx",
-        api_key="sk-NS7xaopX9KliOJhqsNRptJw2ujVajN5S385l7i9zc8jVhGYI",
+        api_key="key",
         base_url="https://api.chatanywhere.tech/v1"
     )
 
