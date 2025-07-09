@@ -1,5 +1,5 @@
 # D3-Fuzz
-D^3^Fuzz first executes an official test suite to collect coverage and identify low-coverage files and critical lines, then assigns weights to these files and employs a dynamic priority scoring function to calculate their coverage score, finally prompts LLM to generate high-quality test cases to explore unknown input spaces.
+D³Fuzz first executes an official test suite to collect coverage and identify low-coverage files and critical lines, then assigns weights to these files and employs a dynamic priority scoring function to calculate their coverage score, finally prompts LLM to generate high-quality test cases to explore unknown input spaces.
 # 🔬 About
 
 D³Fuzz is a novel fuzzing framework that integrates **Large Language Models (LLMs)** and **coverage feedback mechanisms** to discover deep bugs in deep learning libraries like **PyTorch** and **JAX**. It is designed to overcome limitations of existing fuzzers such as poor test diversity, stagnating code coverage, and lack of direction.
