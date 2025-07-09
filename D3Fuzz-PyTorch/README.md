@@ -1,10 +1,8 @@
-<hr>
 
-@[TOC](目录)
 
-<hr>
 
-# 🌟 一、系统环境
+
+# 🌟 1、System environment
 
 
 > ubuntu20.04
@@ -12,140 +10,140 @@
 > cuda 11.3
 > Anaconda_conda 4.10.3
 
-#  🌟 二、源代码编译
+#  🌟 2、Source code compilation
 
-## 🌟🌟 2.1、安装常见依赖项
+## 🌟🌟 2.1、Install common dependencies
 
 ```bash
 conda install astunparse numpy ninja pyyaml mkl mkl-include setuptools cmake cffi typing_extensions future six requests dataclasses
 ```
-## 🌟🌟 2.2、GPU选项（需要用GPU）
-如果选择GPU选项需要有这个依赖，重点是在编译的过程中必须使用到硬件GPU，如果不使用可能会导致编译错误
+## 🌟🌟 2.2、GPU option (requires GPU)
+If you select the GPU option, you need this dependency. The key point is that the hardware GPU must be used during the compilation process. Failure to use it may cause compilation errors
 ```bash
 # CUDA only: Add LAPACK support for the GPU if needed
 conda install -c pytorch magma-cuda113  # or the magma-cuda* that matches your CUDA version from https://anaconda.org/pytorch/repo
 ```
 
 
-## 🌟🌟 2.3、获取 PyTorch 源代码
+## 🌟🌟 2.3、Get PyTorch source code
 
 ```bash
-#使用git clone 克隆pytorch源码
+#Use git clone to clone the pytorch source code
 git clone https://github.com/pytorch/pytorch
-# 进入pytorch目录
+# Enter the pytorch directory
 cd pytorch
 # if you are updating an existing checkout
 git submodule sync
-# 更新第三方库
+# Update third-party libraries
 git submodule update --init --recursive --jobs 0
 ```
-## 🌟🌟 2.4、配置编译环境并进行编译
+## 🌟🌟 2.4、Configure the compilation environment and compile
 
 ```bash
 export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
-#进行安装编译
+#Install and compile
 python setup.py install
 ```
-#  🌟 三、pytorch框架源代码python行覆盖率计算
-## 🌟🌟 3.1、环境与工具
+#  🌟 三、Pytorch framework source code python line coverage calculation
+## 🌟🌟 3.1、Environment and tools
 
 ```bash
-#python工具 
+#python tools
 coverage
-#以开发者选项安装编译的pytorch源码
+#Install compiled pytorch source code with developer options
 python setup.py develop
 ```
-## 🌟🌟 3.2、计算python行覆盖率
+## 🌟🌟 3.2、Calculating python line coverage
 
-> 配置coverage文件
+> Configuring coverage files
 
 ```powershell
 [run]
-#计算coverage覆盖率的目标路径
+#Calculate the target path for coverage
 source = /home/pytorch/torch
 ```
 
-> 编写自动化脚本 执行每一条python语句计算覆盖率
+> Write an automated script to execute each Python statement to calculate coverage
 
 ```python
 import os
 import subprocess
 
-# 定义根目录
+# Define the root directory
 root_dir = "/home/NablaFuzz/NablaFuzz-PyTorch-Jax/output-ad/torch/union"
-# 遍历 root_dir 中所有的 "all" 目录
+# Traverse all "all" directories in root_dir
 for dirpath, dirnames, filenames in os.walk(root_dir):
-    if os.path.basename(dirpath) == "all":  # 只处理 "all" 目录
-        for filename in filenames:
-            if filename.endswith(".py"):  # 只处理 Python 文件
-                filepath = os.path.join(dirpath, filename)
-                print(f"Running {filepath}...")
-                # 使用 coverage 运行当前测试文件
-                subprocess.run(["coverage", "run", "-a", filepath])
+if os.path.basename(dirpath) == "all": # Only process the "all" directory
+for filename in filenames:
+if filename.endswith(".py"): # Only process Python files
+filepath = os.path.join(dirpath, filename)
+print(f"Running {filepath}...")
+# Run the current test file using coverage
+subprocess.run(["coverage", "run", "-a", filepath])
 ```
 
-> 生成覆盖率报告
+> Generate coverage report
 
-**生成命令行报告**：
+**Generate command line report**：
 
 ```bash
 coverage report -m
 ```
-**生成HTML 报告**：
+**Generate HTML report**：
 
 ```bash
 coverage html
 ```
 
-**生成JSON 报告**：
+**Generate JSON report**：
 
 ```bash
 coverage json -o coverage.json
 ```
-**清除上次记录**：
+**Clear last record**：
 
 ```bash
 coverage erase
 ```
 
-#  🌟 四、pytorch框架源代码C++行覆盖率计算
-## 🌟🌟 4.1、前置工具
+#  🌟 4、Pytorch framework source code C++ line coverage calculation
+## 🌟🌟 4.1、Pre-tools
 
 ```powershell
 sudo apt-get update
-#安装gcc工具
+#Install gcc tool
 sudo apt-get install gcc
 
 sudo apt-get update
-#安装C++覆盖率工具
+#Install C++ coverage tool
 sudo apt-get install lcov
 ```
-## 🌟🌟 4.2、配置基础环境
+## 🌟🌟 4.2、Configure the basic environment
 
 ```powershell
-#在编译前，设置环境变量以启用覆盖率支持
+#Before compiling, set environment variables to enable coverage support
 export CFLAGS="--coverage"
 export CXXFLAGS="--coverage"
 export LDFLAGS="--coverage"
 
-#确保清理之前的构建缓存，以避免干扰
+#Make sure to clean the previous build cache to avoid interference
 python setup.py clean
 
-#使用覆盖率选项重新编译 PyTorch
+#Recompile PyTorch with coverage options
 python setup.py build develop
 ```
 
-> 验证编译是否成功
+> Verify that the compilation was successful
 
 ```powershell
-#使用以下命令在 PyTorch 的构建目录中查找 .gcno 文件
+#Use the following command to find the .gcno file in the PyTorch build directory
 find /home/pytorch/build -name "*.gcno"
 ```
-如果该文件下有这种类型的文件，就可以判断是正确编译了
+If there is a file of this type under this file, it can be judged that it is compiled correctly.
 
-## 🌟🌟 4.3、计算C++行覆盖率
+## 🌟🌟 4.3、
 
-> 运行python测试脚本
+> Calculating C++ Line Coverage
 
 ```python
 import os
@@ -167,41 +165,41 @@ with open(log_file_path, "a") as log_file:
                              print(error_msg)
                              log_file.write(error_msg)
 ```
-在运行过程中，PyTorch 的 C++ 后端会生成 `.gcda `文件，这些文件记录了运行时的覆盖率信息，确保测试运行后，`.gcda` 文件已生成，它们通常位于 PyTorch 的 C++ 对象文件目录（如 build/）
+During the run, PyTorch's C++ backend generates `.gcda` files, which record the coverage information of the run time. Make sure that after the test is run, the `.gcda` files have been generated. They are usually located in the PyTorch C++ object file directory (such as build/)
 
-> 使用 lcov 收集覆盖率数据
+> Collecting coverage data using lcov
 
 ```bash
 lcov --directory /home/pytorch/build --capture --output-file coverage.info
 ```
 
- - directory 指定包含 .gcda 和 .gcno 文件的目录。 
- - capture 表示捕获覆盖率信息。 
- - output-file 指定生成的覆盖率数据文件
+- directory specifies the directory containing .gcda and .gcno files.
+- capture indicates capturing coverage information.
+- output-file specifies the generated coverage data file
 
-> 生成覆盖率报告
+> Generate coverage report
 
 ```bash
 genhtml coverage.info --output-directory coverage-report
 ```
 
- - coverage.info 是上一步骤生成的覆盖率数据文件
- -  coverage-report 是输出报告的目录
+- coverage.info is the coverage data file generated in the previous step
+- coverage-report is the directory for the output report
 
-> 清理覆盖率数据
+> Cleaning coverage data
 
-清理生成的 .gcda 文件，以便进行下一次测试：
+Clean up the generated .gcda files for the next test:
 
 ```bash
 lcov --directory /path/to/pytorch/build --zerocounters
 ```
 
-## 🌟🌟 4.4、注意事项
-**测试范围**：Python 测试代码需要调用 PyTorch 的 C++ 后端功能，否则无法生成 C++ 覆盖率数据
-**文件路径过滤**：如果需要只统计特定模块（如 torch.add）的覆盖率，可以在 lcov 中添加过滤选项：
+## 🌟🌟 4.4、Precautions
+**Test scope**: Python test code needs to call PyTorch's C++ backend function, otherwise C++ coverage data cannot be generated
+**File path filtering**: If you need to only count the coverage of a specific module (such as torch.add), you can add filtering options in lcov:
 
 ```bash
 lcov --directory /home/pytorch/build --capture --output-file coverage.info --no-external
 lcov --extract coverage.info "/home/pytorch/src/torch/add/*" --output-file filtered_coverage.info
 ```
-**性能开销**：启用覆盖率支持后，C++ 代码运行速度可能会变慢
+**Performance Overhead**: C++ code may run slower when coverage support is enabled

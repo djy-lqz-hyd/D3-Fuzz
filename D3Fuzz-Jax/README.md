@@ -1,4 +1,4 @@
-# 🌟 一、系统环境
+# 🌟 1、System environment
 
 
 > ubuntu20.04
@@ -8,47 +8,47 @@
 > numpy-1.21.6
 > g++ gcc 10
 
-#  🌟 二、源代码编译
+#  🌟 2、Source code compilation
 
-## 🌟🌟 2.1、安装常见依赖项
+## 🌟🌟 2.1、Install common dependencies
 
 ```bash
- 系统依赖
+#System Dependencies
 sudo apt-get update
 sudo apt-get install -y build-essential python3-dev python3-pip git
 
-# Python 依赖
+# Python Dependencies
 pip3 install --upgrade pip setuptools wheel
 pip3 install numpy scipy coverage
 
-# 安装 Bazel (需版本匹配，JAX 0.3.14需要Bazel 5.1.1)
+# Install Bazel (versions must match, JAX 0.3.14 requires Bazel 5.1.1)
 wget https://github.com/bazelbuild/bazel/releases/download/5.1.1/bazel-5.1.1-installer-linux-x86_64.sh
 chmod +x bazel-5.1.1-installer-linux-x86_64.sh
 ./bazel-5.1.1-installer-linux-x86_64.sh --user
 export PATH="$PATH:$HOME/bin"
 
-# GPU 支持（可选）
-# 安装对应版本的 CUDA 和 cuDNN
+# GPU support (optional)
+# Install the corresponding versions of CUDA and cuDNN
 ```
-## 🌟🌟 2.2、获取源码
+## 🌟🌟 2.2、Get the source code
 
 ```bash
 git clone https://github.com/google/jax.git
 cd jax
-git checkout jax-v0.3.14  # 确认标签是否正确
+git checkout jax-v0.3.14  # Confirm that the label is correct
 ```
-我们这里要编辑的是jax版本为0.3.14
+The jax version we want to edit here is 0.3.14
 ## 🌟🌟 2.3、配置构建参数
-修改jax目录下的.bazelrc文件，添加所需参数
+Modify the .bazelrc file in the jax directory and add the required parameters
 
 ```powershell
 build:linux --copt=-Wno-stringop-truncation
-#build:linux --copt=-Wno-array-parameter 注销掉这行参数
-#编译器警告（如可能未初始化）默认被视为 错误（-Werror）；
-#同时还启用了 -Wno-array-parameter（只适用于 C++）而 C 编译器识别不了；
-#当前构建了 C 文件（upb/table.c），这些设置再次引发错误
 
-#加入编译条件 覆盖率条件C++插桩 覆盖率选项
+#build:linux --copt=-Wno-array-parameter cancels this parameter line
+#Compiler warnings (such as possible uninitialization) are treated as errors by default (-Werror);
+#Also -Wno-array-parameter is enabled (only for C++) and the C compiler does not recognize it;
+#Currently building a C file (upb/table.c), these settings cause errors again
+#Add compilation conditions Coverage conditions C++ plug-in Coverage options
 build --copt=-O3
 build --copt=--coverage
 build --linkopt=--coverage
@@ -61,75 +61,74 @@ build --per_file_copt=.*\\.cpp@-Wno-class-memaccess
 build --copt=-Wno-error
 build --copt=-Wno-maybe-uninitialized
 ```
-## 🌟🌟 2.4、配置外部依赖
-有很多包链接都不能下载，手动下载到本地引入WORKSPACE
-生成对应的sha256校验码
+## 🌟🌟 2.4、Configuring external dependencies
+Many package links cannot be downloaded. Manually download them to local and import them into WORKSPACE
+Generate the corresponding sha256 checksum
 
 ```bash
 http_archive(
     name = "org_tensorflow",
-    sha256 = "a99890443df024e52d9c7b075e9916250c6cc6b778d62c384b7dcd1903d8f4f1",  # 保留原始 SHA256 校验值
+    sha256 = "a99890443df024e52d9c7b075e9916250c6cc6b778d62c384b7dcd1903d8f4f1", # Keep the original SHA256 checksum
     strip_prefix = "tensorflow-d250676d7776cfbca38e8690b75e1376afecf58d",
     urls = ["file:///home/tensorflow-d250676d7776cfbca38e8690b75e1376afecf58d.tar.gz"]
 )
 http_archive(
     name = "org_tensorflow_runtime",
-    sha256 = "c554b8c9ed2e34363f9366d4be0ea4fb905dbd824ea5deb5dfe23b42b8eb432a",  # 使用上一步计算的校验值
+    sha256 = "c554b8c9ed2e34363f9366d4be0ea4fb905dbd824ea5deb5dfe23b42b8eb432a",  # Use the checksum calculated in the previous step
     strip_prefix = "runtime-1a28370b26c23d9d7c9399896ea5eba23bec029f",
     urls = ["file:///home/runtime-1a28370b26c23d9d7c9399896ea5eba23bec029f.tar.gz"]
 )
 http_archive(
     name = "org_llvm_llvm_project",
-    sha256 = "4138bb3f83bfb822f3ce795cd7e3e7a7018709d8af4e7b54194cbd81931cc93c",  # 使用上一步计算的校验值
+    sha256 = "4138bb3f83bfb822f3ce795cd7e3e7a7018709d8af4e7b54194cbd81931cc93c",  # Use the checksum calculated in the previous step
     strip_prefix = "llvm-project-4821508d4db75a535d02b8938f81fac6de66cc26",
     urls = ["file:///home/llvm-project-4821508d4db75a535d02b8938f81fac6de66cc26.tar.gz"]
 )
 ```
 
-## 🌟🌟 2.5、编译
+## 🌟🌟 2.5、Compile
 ```bash
-#清理缓存
+#Clear the cache
 bazel clean --expunge
-#运行编译
+#Run the compilation
  bazel build   --compilation_mode=opt   --define=enable_coverage=true   --define=android=false   //build:build_wheel
 ```
-编译成功
-![在这里插入图片描述](../../../../AppData/typora/picture/f693c62d4dcd4348a778be45386211c3.png)
-#  🌟 三、安装Jax
-## 🌟🌟 3.1、生成 Wheel 包
+Compilation successful
+#  🌟 三、Install Jax
+## 🌟🌟 3.1、Generate Wheel Package
 
 ```bash
-# 创建输出目录
-# 执行脚本生成 wheel 包
+# Create output directory
+# Execute script to generate wheel package
 ./bazel-bin/build/build_wheel \
   --output_path=/tmp/jax_wheel \
-  --cpu=$(uname -m)  # 自动检测 CPU 架构（如 x86_64）
-# 查看生成的 wheel 文件
+  --cpu=$(uname -m)  # Automatically detect CPU architecture (e.g. x86_64)
+# View the generated wheel file
 ls -l /tmp/jax_wheel/*.whl
 ```
-## 🌟🌟 3.2、安装 Wheel 包
+## 🌟🌟 3.2、Installing the Wheel Package
 
 ```bash
-# 安装生成的 wheel 包 Jaxlib
+# Install the generated wheel package Jaxlib
 pip install /tmp/jax_wheel/*.whl
-#设置环境
+#Set up the environment
 export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
-#安装适应对应包
+#Install the corresponding package
 pip install "numpy<2" "scipy==1.5.4"
-# 验证安装
+# Verify installation
 python -c "import jax; print(jax.__version__)"
-# 应输出 0.3.14
-#安装JAX 不需要C++插桩，只需要Python安装即可
+# Should output 0.3.14
+#Install JAX. No C++ plug-in is required. Only Python installation is required.
 pip install -e .  # installs jax
 ```
 
-#  🌟 四、查找JAX和JAXlib的源码路径
+#  🌟 4、Find the source path of JAX and JAXlib
 ## 🌟🌟 4.1、JAXlib
 
 ```powershell
 python -c "import jaxlib; print(jaxlib.__file__)"
 #/root/miniconda3/envs/Jax/lib/python3.9/site-packages/jaxlib/__init__.py
 ```
-对应的C++动态库（如.so文件）通常位于：
+The corresponding C++ dynamic library (such as .so file) is usually located at:
 
 > /path/to/site-packages/jaxlib/_lib/
